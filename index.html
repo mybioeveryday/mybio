@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>k1rseex<3</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --glow: 0 0 15px rgba(255, 255, 255, 0.6); }
+        body {
+            margin: 0; height: 100vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: #000 url('https://i.pinimg.com/originals/f4/f4/af/f4f4af726dc651a4565f826aaff3ef6b.gif') no-repeat center center fixed;
+            background-size: cover; font-family: 'Inter', sans-serif; color: white; overflow: hidden;
+        }
+        .card {
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+            padding: 40px; width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .avatar { width: 110px; height: 110px; border-radius: 50%; border: 2px solid white; box-shadow: var(--glow); margin-bottom: 15px; object-fit: cover; }
+        .nick { font-size: 32px; font-weight: 800; text-shadow: 0 0 10px white; }
+        .quote { font-size: 14px; color: #aaa; margin-bottom: 25px; }
+        .social-icons { display: flex; justify-content: center; gap: 25px; margin-bottom: 20px; }
+        .social-icons a { color: white; font-size: 24px; transition: 0.3s; filter: drop-shadow(0 0 2px white); }
+        .view-counter { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+
+        .player-box {
+            margin-top: 20px; width: 380px; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
+            padding: 15px; display: flex; align-items: center; gap: 12px;
+        }
+        .track-art {
+            width: 60px; height: 60px; border-radius: 10px;
+            background: url('https://seven.muzyet.com/images/cover/scally-milano/scally-milano-problemnyy-rebenok.jpg') no-repeat center;
+            background-size: cover; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .track-meta { flex-grow: 1; text-align: left; }
+        .track-name { font-size: 12px; font-weight: 700; display: block; margin-bottom: 5px; color: #fff; }
+        .progress-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; cursor: pointer; }
+        .progress-bar { height: 100%; background: white; width: 0%; box-shadow: 0 0 8px white; }
+        .time-info { font-size: 10px; color: #888; margin-top: 5px; display: flex; justify-content: space-between; }
+        .player-controls { display: flex; flex-direction: column; gap: 12px; cursor: pointer; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <img src="https://i.pinimg.com/originals/c9/a6/c0/c9a6c0dd27f0411498c8091a7680a3d6.gif" class="avatar">
+        <div class="nick">k1rseex<3</div>
+        <div class="quote">что заставляет вас жить?</div>
+        
+        <div class="social-icons">
+            <a href="https://steamcommunity.com/profiles/76561199514320529/" target="_blank"><i class="fa-brands fa-steam"></i></a>
+            <a href="https://t.me/+n_6e8sSttyliNzEy" target="_blank"><i class="fa-brands fa-telegram"></i></a>
+            <a href="https://www.twitch.tv/k1rseex" target="_blank"><i class="fa-brands fa-twitch"></i></a>
+            <a href="https://discord.gg/w7n8EnkZmn" target="_blank"><i class="fa-brands fa-discord"></i></a>
+        </div>
+
+        <div class="view-counter">
+            <i class="fa-solid fa-eye"></i> просмотры: <span id="v-count">0</span>
+        </div>
+    </div>
+
+    <div class="player-box">
+        <div class="track-art"></div>
+        <div class="track-meta">
+            <span class="track-name">Problem Child (Sverdlova 51)</span>
+            <div class="progress-wrap" id="seek-bar">
+                <div class="progress-bar" id="p-line"></div>
+            </div>
+            <div class="time-info">
+                <span id="current-time">0:00</span>
+                <span>1:31</span>
+            </div>
+        </div>
+        <div class="player-controls">
+            <i class="fa-solid fa-volume-high" id="mute-btn"></i>
+            <i class="fa-solid fa-play" id="play-btn"></i>
+        </div>
+    </div>
+
+    <audio id="audio-track" src="https://files.catbox.moe/zx7iuk.mp3" loop preload="auto"></audio>
+
+    <script>
+        const audio = document.getElementById('audio-track');
+        const playBtn = document.getElementById('play-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const progress = document.getElementById('p-line');
+        const seekBar = document.getElementById('seek-bar');
+        const timeDisplay = document.getElementById('current-time');
+        const viewDisplay = document.getElementById('v-count');
+
+        // Безопасный счетчик (без localStorage, чтобы не было SecurityError)
+        let count = 0;
+        try {
+            // Если localStorage доступен — используем, если нет — просто имитируем
+            if (window.localStorage) {
+                count = localStorage.getItem('v_count') || 0;
+                count++;
+                localStorage.setItem('v_count', count);
+            } else {
+                count = Math.floor(Math.random() * 10) + 1;
+            }
+        } catch(e) { 
+            count = 1; // Фоллбек для песочницы
+        }
+        viewDisplay.innerText = count;
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play().then(() => {
+                    playBtn.className = 'fa-solid fa-pause';
+                }).catch(err => console.log("Нажми на страницу для звука"));
+            } else {
+                audio.pause();
+                playBtn.className = 'fa-solid fa-play';
+            }
+        }
+
+        // Клик по кнопке
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+
+        // Автоплей при первом клике по любой части сайта
+        document.addEventListener('click', () => {
+            if (audio.paused) togglePlay();
+        }, { once: true });
+
+        muteBtn.onclick = (e) => {
+            e.stopPropagation();
+            audio.muted = !audio.muted;
+            muteBtn.className = audio.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+        };
+
+        audio.ontimeupdate = () => {
+            if (!audio.duration) return;
+            const pct = (audio.currentTime / 91) * 100; // 91 сек = 1:31
+            progress.style.width = pct + '%';
+            const mins = Math.floor(audio.currentTime / 60);
+            const secs = Math.floor(audio.currentTime % 60);
+            timeDisplay.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        };
+
+        seekBar.onclick = (e) => {
+            const rect = seekBar.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = pos * 91;
+        };
+    </script>
+</body>
+</html>
